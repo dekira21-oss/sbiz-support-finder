@@ -76,10 +76,27 @@ async function fetchBizinfo() {
 }
 
 // ── K-Startup ─────────────────────────────────────────────
-// 응답 항목 이름은 공식 문서의 조회 조건 이름(biz_pbanc_nm, pbanc_rcpt_end_dt, supt_regin …)을 기준으로 하고,
-// 다른 이름으로 올 때를 대비해 후보를 여러 개 둔다.
+// 응답 항목 이름은 2026.11.1 실제 응답(aply_mthd_*_rcpt_istc, detl_pg_url, prch_cnpl_no …)으로 확인함.
+const isUrl = (s) => /^https?:\/\//i.test(String(s).trim());
+// 접수 방법 항목(온라인·방문·이메일·우편·팩스·기타)을 "온라인 접수 · 방문 접수 (…)"처럼 묶는다. 온라인 접수 주소는 신청 링크로 쓴다.
+function kstartupHow(it) {
+  const ways = [["aply_mthd_onli_rcpt_istc", "온라인 접수"], ["aply_mthd_vst_rcpt_istc", "방문 접수"], ["aply_mthd_eml_rcpt_istc", "이메일 접수"],
+    ["aply_mthd_pssr_rcpt_istc", "우편 접수"], ["aply_mthd_fax_rcpt_istc", "팩스 접수"], ["aply_mthd_etc_istc", "기타"]];
+  let ap = "";
+  const parts = [];
+  for (const [k, label] of ways) {
+    const v = strip(it[k]);
+    if (!v) continue;
+    if (isUrl(v)) { if (!ap) ap = v; parts.push(label); }
+    else parts.push(`${label}(${cut(v, 60)})`);
+  }
+  return { how: cut(parts.join(" · "), 200), ap };
+}
+
 export function normalizeKstartup(it) {
   const regionText = strip(pick(it, ["supt_regin", "supt_regin_nm"]));
+  const m = kstartupHow(it);
+  const applyUrl = pick(it, ["biz_aply_url", "aply_url"]);
   return {
     src: "kstartup",
     id: "KS" + String(pick(it, ["pbanc_sn", "id", "biz_pbanc_sn"])),
@@ -91,10 +108,10 @@ export function normalizeKstartup(it) {
     r: regionOf(regionText),
     tags: [regionText, strip(pick(it, ["biz_enyy"])), strip(pick(it, ["biz_trgt_age"]))].filter(Boolean),
     d: cut(strip(pick(it, ["pbanc_ctnt", "biz_pbanc_ctnt", "pbanc_cn"])), 260),
-    how: cut(strip(pick(it, ["aply_mthd_onli_rcpt_istc", "aply_mthd_vst_rcpt_istc", "aply_mthd_etc_istc", "aply_mthd"])), 200),
-    tel: cut(strip(pick(it, ["prch_cnpl_no", "biz_prch_dprt_nm"])), 120),
+    how: m.how,
+    tel: cut(strip(pick(it, ["prch_cnpl_no"])), 120),
     u: pick(it, ["detl_pg_url"]) || KSTARTUP_LIST,
-    ap: pick(it, ["biz_aply_url", "aply_url"]),
+    ap: isUrl(applyUrl) ? applyUrl : m.ap,
     start: ymd(pick(it, ["pbanc_rcpt_bgng_dt"])), end: ymd(pick(it, ["pbanc_rcpt_end_dt"])), per: "",
     reg: ymd(pick(it, ["pbanc_rcpt_bgng_dt"])),
   };
