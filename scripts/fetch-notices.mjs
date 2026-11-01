@@ -53,7 +53,8 @@ export function itemsOf(json) {
 
 async function main() {
   if (!KEY) {
-    console.warn("BIZINFO_KEY가 없어 공고를 받지 않았습니다. 저장소 Settings → Secrets에 키를 등록하세요.");
+    // 실행 요약(Annotations)에 보이도록 GitHub 경고 형식으로 남긴다
+    console.log("::warning::BIZINFO_KEY가 없어 공고를 받지 않았습니다. Settings → Secrets and variables → Actions에 BIZINFO_KEY를 등록하세요.");
     return;
   }
   const url = `${API}?crtfcKey=${encodeURIComponent(KEY)}&dataType=json&searchCnt=0`;
@@ -69,9 +70,9 @@ async function main() {
   if (!items.length) throw new Error("받아온 공고가 0건입니다. 인증키나 API 상태를 확인하세요.");
   await mkdir(new URL("../data/", import.meta.url), { recursive: true });
   await writeFile(OUT, JSON.stringify({ updated: today, source: "기업마당 지원사업정보 API", count: items.length, items }));
-  console.log(`진행 중 공고 ${items.length}건 저장 (${today})`);
+  console.log(`::notice::진행 중 공고 ${items.length}건 저장 (${today})`);
 }
 
 if (process.argv[1]?.endsWith("fetch-notices.mjs")) {
-  main().catch((e) => { console.error(e.message); process.exit(1); });
+  main().catch((e) => { console.log("::error::" + e.message); process.exit(1); });
 }
