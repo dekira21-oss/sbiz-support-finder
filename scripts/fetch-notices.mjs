@@ -1,20 +1,29 @@
-// 기업마당 지원사업정보 API에서 진행 중인 공고를 받아 data/notices.json으로 저장한다.
-// 인증키는 환경변수 BIZINFO_KEY(GitHub 저장소 Secrets)로만 받는다. 키를 파일에 쓰지 말 것.
+// 진행 중인 지원사업 공고를 받아 data/notices.json으로 저장한다.
+//  - 기업마당 지원사업정보 API: 인증키 환경변수 BIZINFO_KEY
+//  - K-Startup 사업공고 조회서비스(공공데이터포털): 인증키 환경변수 DATA_GO_KR_KEY
+// 인증키는 GitHub 저장소 Secrets로만 받는다. 키를 파일이나 로그에 쓰지 말 것.
 import { writeFile, mkdir } from "node:fs/promises";
 
-const KEY = process.env.BIZINFO_KEY;
-const API = "https://www.bizinfo.go.kr/uss/rss/bizinfoApi.do";
+const BIZINFO_KEY = process.env.BIZINFO_KEY;
+const DATA_GO_KR_KEY = process.env.DATA_GO_KR_KEY;
+const BIZINFO_API = "https://www.bizinfo.go.kr/uss/rss/bizinfoApi.do";
+const KSTARTUP_API = "https://apis.data.go.kr/B552735/kisedKstartupService01/getAnnouncementInformation01";
+const KSTARTUP_LIST = "https://www.k-startup.go.kr/web/contents/bizpbanc-ongoing.do";
 const OUT = new URL("../data/notices.json", import.meta.url);
 
 const REGIONS = { 서울: "seoul", 부산: "busan", 대구: "daegu", 인천: "incheon", 전남광주: "jngj", 광주: "jngj", 전남: "jngj",
   대전: "daejeon", 울산: "ulsan", 세종: "sejong", 경기: "gyeonggi", 강원: "gangwon", 충북: "chungbuk", 충남: "chungnam",
   전북: "jeonbuk", 경북: "gyeongbuk", 경남: "gyeongnam", 제주: "jeju" };
 
-const strip = (s = "") => String(s).replace(/<[^>]*>/g, " ").replace(/&nbsp;/g, " ").replace(/&amp;/g, "&")
+const strip = (s = "") => String(s ?? "").replace(/<[^>]*>/g, " ").replace(/&nbsp;/g, " ").replace(/&amp;/g, "&")
   .replace(/&lt;/g, "<").replace(/&gt;/g, ">").replace(/&quot;/g, '"').replace(/&#39;/g, "'").replace(/\s+/g, " ").trim();
 const cut = (s, n) => (s.length > n ? s.slice(0, n - 1) + "…" : s);
-const ymd = (s) => (/^\d{8}$/.test(s) ? `${s.slice(0, 4)}-${s.slice(4, 6)}-${s.slice(6, 8)}` : "");
+const ymd = (s) => { const d = String(s ?? "").replace(/\D/g, "").slice(0, 8); return d.length === 8 ? `${d.slice(0, 4)}-${d.slice(4, 6)}-${d.slice(6, 8)}` : ""; };
+const pick = (o, keys) => { for (const k of keys) if (o[k] != null && String(o[k]).trim() !== "") return o[k]; return ""; };
+const regionOf = (text) => { const hit = Object.keys(REGIONS).filter((k) => String(text).includes(k)); return hit.length === 1 ? REGIONS[hit[0]] : "all"; };
+const todayKST = () => new Date(Date.now() + 9 * 3600e3).toISOString().slice(0, 10);
 
+// ── 기업마당 ───────────────────────────────────────────────
 // "20260101 ~ 20261231" 같은 신청기간을 시작·종료일로 나눈다. 상시·예산 소진 등 글자는 그대로 둔다.
 export function period(raw = "") {
   const m = String(raw).match(/(\d{8})\s*~\s*(\d{8})/);
@@ -26,6 +35,7 @@ export function normalize(it) {
   const region = tags.map((t) => REGIONS[t]).find(Boolean) || "all";
   const p = period(it.reqstBeginEndDe || it.reqstDt);
   return {
+    src: "bizinfo",
     id: it.pblancId || it.seq,
     n: strip(it.pblancNm || it.title),
     a: strip(it.jrsdInsttNm || it.author),
@@ -51,26 +61,88 @@ export function itemsOf(json) {
   return [];
 }
 
-async function main() {
-  if (!KEY) {
-    // 실행 요약(Annotations)에 보이도록 GitHub 경고 형식으로 남긴다
-    console.log("::warning::BIZINFO_KEY가 없어 공고를 받지 않았습니다. Settings → Secrets and variables → Actions에 BIZINFO_KEY를 등록하세요.");
-    return;
-  }
-  const url = `${API}?crtfcKey=${encodeURIComponent(KEY)}&dataType=json&searchCnt=0`;
+async function fetchBizinfo() {
+  const url = `${BIZINFO_API}?crtfcKey=${encodeURIComponent(BIZINFO_KEY)}&dataType=json&searchCnt=0`;
   const res = await fetch(url, { headers: { Accept: "application/json" } });
   if (!res.ok) throw new Error(`기업마당 API 응답 오류: HTTP ${res.status}`);
   const text = await res.text();
   let json;
-  try { json = JSON.parse(text); } catch { throw new Error("기업마당 API가 JSON이 아닌 응답을 보냈습니다: " + text.slice(0, 200)); }
-  const today = new Date(Date.now() + 9 * 3600e3).toISOString().slice(0, 10); // 한국 날짜
-  const items = itemsOf(json).map(normalize)
-    .filter((x) => x.id && x.n)
-    .filter((x) => !x.end || x.end >= today); // 마감 지난 공고 제외
-  if (!items.length) throw new Error("받아온 공고가 0건입니다. 인증키나 API 상태를 확인하세요.");
+  try { json = JSON.parse(text); } catch { throw new Error("기업마당 API가 JSON이 아닌 응답을 보냈습니다(인증키 확인): " + strip(text).slice(0, 160)); }
+  return itemsOf(json).map(normalize);
+}
+
+// ── K-Startup ─────────────────────────────────────────────
+// 응답 항목 이름은 공식 문서의 조회 조건 이름(biz_pbanc_nm, pbanc_rcpt_end_dt, supt_regin …)을 기준으로 하고,
+// 다른 이름으로 올 때를 대비해 후보를 여러 개 둔다.
+export function normalizeKstartup(it) {
+  const regionText = strip(pick(it, ["supt_regin", "supt_regin_nm"]));
+  return {
+    src: "kstartup",
+    id: "KS" + String(pick(it, ["pbanc_sn", "id", "biz_pbanc_sn"])),
+    n: strip(pick(it, ["biz_pbanc_nm", "intg_pbanc_biz_nm", "pbanc_nm"])),
+    a: strip(pick(it, ["pbanc_ntrp_nm", "sprv_inst", "biz_prch_dprt_nm", "pbanc_inst_nm"])),
+    ex: strip(pick(it, ["biz_prch_dprt_nm", "exc_inst_nm"])),
+    cat: strip(pick(it, ["supt_biz_clsfc", "supt_biz_clsfc_nm"])),
+    tgt: cut(strip(pick(it, ["aply_trgt_ctnt", "aply_trgt"])), 120),
+    r: regionOf(regionText),
+    tags: [regionText, strip(pick(it, ["biz_enyy"])), strip(pick(it, ["biz_trgt_age"]))].filter(Boolean),
+    d: cut(strip(pick(it, ["pbanc_ctnt", "biz_pbanc_ctnt", "pbanc_cn"])), 260),
+    how: cut(strip(pick(it, ["aply_mthd_onli_rcpt_istc", "aply_mthd_vst_rcpt_istc", "aply_mthd_etc_istc", "aply_mthd"])), 200),
+    tel: cut(strip(pick(it, ["prch_cnpl_no", "biz_prch_dprt_nm"])), 120),
+    u: pick(it, ["detl_pg_url"]) || KSTARTUP_LIST,
+    ap: pick(it, ["biz_aply_url", "aply_url"]),
+    start: ymd(pick(it, ["pbanc_rcpt_bgng_dt"])), end: ymd(pick(it, ["pbanc_rcpt_end_dt"])), per: "",
+    reg: ymd(pick(it, ["pbanc_rcpt_bgng_dt"])),
+  };
+}
+
+async function fetchKstartup() {
+  const all = [];
+  for (let page = 1; page <= 20; page++) {
+    const qs = new URLSearchParams({ page: String(page), perPage: "500", returnType: "json", "cond[rcrt_prgs_yn::EQ]": "Y" });
+    const url = `${KSTARTUP_API}?serviceKey=${encodeURIComponent(DATA_GO_KR_KEY)}&${qs}`;
+    const res = await fetch(url, { headers: { Accept: "application/json" } });
+    const text = await res.text();
+    let json;
+    try { json = JSON.parse(text); } catch { throw new Error(`K-Startup API가 JSON이 아닌 응답을 보냈습니다(HTTP ${res.status}, 활용신청·인증키 확인): ` + strip(text).slice(0, 160)); }
+    const rows = Array.isArray(json.data) ? json.data : [];
+    if (page === 1 && rows[0]) console.log("::notice::K-Startup 응답 항목: " + Object.keys(rows[0]).join(", "));
+    all.push(...rows);
+    const total = Number(json.totalCount || json.matchCount || 0);
+    if (!rows.length || all.length >= total) break;
+  }
+  return all.map(normalizeKstartup);
+}
+
+// ── 합치기 ────────────────────────────────────────────────
+const titleKey = (s) => s.replace(/\[[^\]]*\]|\([^)]*\)|\s|공고|모집|안내|20\d\d년?/g, "");
+
+async function main() {
+  if (!BIZINFO_KEY && !DATA_GO_KR_KEY) {
+    // 실행 요약(Annotations)에 보이도록 GitHub 경고 형식으로 남긴다
+    console.log("::warning::인증키가 없어 공고를 받지 않았습니다. Settings → Secrets and variables → Actions에 BIZINFO_KEY(기업마당) 또는 DATA_GO_KR_KEY(공공데이터포털)를 등록하세요.");
+    return;
+  }
+  const today = todayKST();
+  const sources = [];
+  const results = [];
+  const errors = [];
+  for (const [name, key, fn] of [["기업마당", BIZINFO_KEY, fetchBizinfo], ["K-Startup", DATA_GO_KR_KEY, fetchKstartup]]) {
+    if (!key) { console.log(`::warning::${name} 인증키가 없어 건너뜁니다.`); continue; }
+    try {
+      const got = (await fn()).filter((x) => x.id && x.n).filter((x) => !x.end || x.end >= today);
+      console.log(`::notice::${name} 진행 중 공고 ${got.length}건`);
+      if (got.length) { sources.push(name); results.push(...got); }
+    } catch (e) { errors.push(e.message); console.log(`::error::${e.message}`); }
+  }
+  // 같은 공고가 두 곳에 있으면 기업마당 쪽을 남긴다
+  const seen = new Set();
+  const items = results.filter((x) => { const k = titleKey(x.n); if (seen.has(k)) return false; seen.add(k); return true; });
+  if (!items.length) throw new Error("받아온 공고가 0건입니다. " + (errors.join(" / ") || "인증키나 API 상태를 확인하세요."));
   await mkdir(new URL("../data/", import.meta.url), { recursive: true });
-  await writeFile(OUT, JSON.stringify({ updated: today, source: "기업마당 지원사업정보 API", count: items.length, items }));
-  console.log(`::notice::진행 중 공고 ${items.length}건 저장 (${today})`);
+  await writeFile(OUT, JSON.stringify({ updated: today, source: sources.join(" · "), count: items.length, items }));
+  console.log(`::notice::진행 중 공고 총 ${items.length}건 저장 (${today}, ${sources.join(" · ")})`);
+  // 한쪽만 실패하면 받은 공고는 저장하고, 실패 내용은 위의 ::error:: 표시로 실행 요약에 남긴다
 }
 
 if (process.argv[1]?.endsWith("fetch-notices.mjs")) {

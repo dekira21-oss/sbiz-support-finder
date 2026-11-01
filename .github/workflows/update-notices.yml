@@ -23,10 +23,11 @@ jobs:
           node-version: 22
       - name: 키 등록 위치 점검(값은 출력하지 않음)
         run: |
-          echo "::notice::Repository secret BIZINFO_KEY 있음=${{ secrets.BIZINFO_KEY != '' }} / Variables BIZINFO_KEY 있음=${{ vars.BIZINFO_KEY != '' }}"
+          echo "::notice::Repository secret 등록 여부 — BIZINFO_KEY=${{ secrets.BIZINFO_KEY != '' }}, DATA_GO_KR_KEY=${{ secrets.DATA_GO_KR_KEY != '' }}"
       - name: 공고 받아오기
         env:
           BIZINFO_KEY: ${{ secrets.BIZINFO_KEY }}
+          DATA_GO_KR_KEY: ${{ secrets.DATA_GO_KR_KEY }}
         run: node scripts/fetch-notices.mjs
       - name: 바뀐 내용 저장
         run: |

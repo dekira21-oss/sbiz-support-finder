@@ -904,22 +904,24 @@ if(hid&&P.some(p=>p.id===hid))state.focus=hid;else state.ind.add("korean");
 render();
 $("sortSel").addEventListener("change",()=>{limit=20;render()});
 // 실시간 공고: GitHub Actions가 매일 기업마당 API로 받아 둔 data/notices.json (없으면 조용히 건너뜀)
-const LIVE_CAT={금융:"finance",기술:"innov",인력:"labor",수출:"market",내수:"market",창업:"startup",경영:"innov",기타:"innov"};
+// 기업마당 분야(금융·기술…)와 K-Startup 지원분야(사업화·멘토링·융자…)를 앱의 용도 분류로
+const liveCat=c=>/융자|보증|금융/.test(c)?"finance":/인력/.test(c)?"labor":/수출|글로벌|내수|판로/.test(c)?"market":/기술|R&D|연구/.test(c)?"innov":/사업화|창업|멘토링|컨설팅|교육|시설|공간|보육|행사|네트워크/.test(c)?"startup":"innov";
+const SRC_NM={bizinfo:"기업마당",kstartup:"K-Startup"};
 fetch("data/notices.json",{cache:"no-store"}).then(r=>r.ok?r.json():null).then(j=>{
   if(!j||!Array.isArray(j.items))return;
   const t=todayKST();
   const add=j.items.filter(x=>!x.end||x.end>=t).map(x=>({
-    id:"b"+String(x.id).replace(/[^A-Za-z0-9]/g,"").slice(-12),
-    n:x.n,a:x.a+(x.ex&&x.ex!==x.a?" · "+x.ex:""),c:LIVE_CAT[x.cat]||"innov",i:"*",s:"*",r:x.r||"all",
+    id:(x.src==="kstartup"?"k":"b")+String(x.id).replace(/[^A-Za-z0-9]/g,"").slice(-12),
+    n:x.n,a:x.a+(x.ex&&x.ex!==x.a?" · "+x.ex:""),c:liveCat(x.cat||""),i:"*",s:"*",r:x.r||"all",
     t:/청년/.test(x.n+" "+x.tgt)?["youth"]:[],
     amt:x.tgt?"지원대상: "+x.tgt:"지원 내용은 공고 확인",
     per:x.end?`${x.start.replace(/-/g,".")} ~ ${x.end.replace(/-/g,".")}`:(x.per||"공고 확인"),
     d:x.d||x.n,u:x.u,ap:x.ap||"",ch:x.how||"공고문의 신청 방법 확인",dc:x.tel?"문의: "+x.tel:"",
-    k:(x.tags||[]).join(" ")+" "+x.cat+" 실시간",ty:"실시간 공고 · 기업마당 · "+x.cat,live:true,end:x.end||"",
+    k:(x.tags||[]).join(" ")+" "+x.cat+" 실시간",ty:"실시간 공고 · "+(SRC_NM[x.src]||"기업마당")+(x.cat?" · "+x.cat:""),live:true,end:x.end||"",
     rel:/소상공인|자영업|예비창업|전통시장|상점가/.test(x.n+" "+x.tgt+" "+x.d)}));
   P.push(...add);
   $("liveInfo").hidden=false;
-  $("liveInfo").textContent=`기업마당 실시간 공고 ${add.length}건 포함 · ${j.updated} 갱신 · 마감 임박순으로 정렬하면 D-day 순서로 볼 수 있어요`;
+  $("liveInfo").textContent=`${j.source||"기업마당"} 실시간 공고 ${add.length}건 포함 · ${j.updated} 갱신 · 마감 임박순으로 정렬하면 D-day 순서로 볼 수 있어요`;
   if(hid&&!state.focus&&add.some(p=>p.id===hid)){state.ind.clear();state.focus=hid}
   render();
 }).catch(()=>{});
