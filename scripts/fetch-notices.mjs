@@ -130,6 +130,7 @@ async function fetchKstartup() {
     if (page === 1 && rows[0]) console.log("::notice::K-Startup 응답 항목: " + Object.keys(rows[0]).join(", "));
     all.push(...rows);
     const total = Number(json.totalCount || json.matchCount || 0);
+    if (page === 1) console.log(`::notice::K-Startup 전체 ${total}건, 한 번에 ${rows.length}건씩 받음`);
     if (!rows.length || all.length >= total) break;
   }
   return all.map(normalizeKstartup);
