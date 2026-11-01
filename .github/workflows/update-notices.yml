@@ -1,4 +1,4 @@
-name: 기업마당 공고 매일 갱신
+name: 지원사업 공고 매일 갱신(기업마당·K-Startup)
 
 on:
   schedule:
@@ -12,6 +12,10 @@ on:
 
 permissions:
   contents: write
+
+concurrency:               # 동시에 두 번 돌며 커밋이 엇갈리지 않게
+  group: update-notices
+  cancel-in-progress: false
 
 jobs:
   update:
