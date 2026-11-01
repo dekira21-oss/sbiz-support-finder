@@ -22,6 +22,13 @@ const ymd = (s) => { const d = String(s ?? "").replace(/\D/g, "").slice(0, 8); r
 const pick = (o, keys) => { for (const k of keys) if (o[k] != null && String(o[k]).trim() !== "") return o[k]; return ""; };
 const regionOf = (text) => { const hit = Object.keys(REGIONS).filter((k) => String(text).includes(k)); return hit.length === 1 ? REGIONS[hit[0]] : "all"; };
 const todayKST = () => new Date(Date.now() + 9 * 3600e3).toISOString().slice(0, 10);
+// 정부 사이트가 해외 서버에서 가끔 접속을 끊으므로, 접속 실패만 30초 제한·최대 3번까지 다시 시도한다
+async function fetchRetry(url, opts = {}, tries = 3) {
+  for (let i = 1; ; i++) {
+    try { return await fetch(url, { ...opts, signal: AbortSignal.timeout(30000) }); }
+    catch (e) { if (i >= tries) throw e; await new Promise((r) => setTimeout(r, 5000 * i)); }
+  }
+}
 
 // ── 기업마당 ───────────────────────────────────────────────
 // "20260101 ~ 20261231" 같은 신청기간을 시작·종료일로 나눈다. 상시·예산 소진 등 글자는 그대로 둔다.
@@ -63,7 +70,7 @@ export function itemsOf(json) {
 
 async function fetchBizinfo() {
   const url = `${BIZINFO_API}?crtfcKey=${encodeURIComponent(BIZINFO_KEY)}&dataType=json&searchCnt=0`;
-  const res = await fetch(url, { headers: { Accept: "application/json" } });
+  const res = await fetchRetry(url, { headers: { Accept: "application/json" } });
   if (!res.ok) throw new Error(`기업마당 API 응답 오류: HTTP ${res.status}`);
   const text = await res.text();
   let json;
@@ -125,7 +132,7 @@ async function fetchKstartup() {
     const qs = new URLSearchParams({ page: String(page), perPage: "200", returnType: "json",
       "cond[rcrt_prgs_yn::EQ]": "Y", "cond[pbanc_rcpt_end_dt::GTE]": today8 });
     const url = `${KSTARTUP_API}?serviceKey=${encodeURIComponent(DATA_GO_KR_KEY)}&${qs}`;
-    const res = await fetch(url, { headers: { Accept: "application/json" } });
+    const res = await fetchRetry(url, { headers: { Accept: "application/json" } });
     const text = await res.text();
     let json;
     try { json = JSON.parse(text); } catch { throw new Error(`K-Startup API가 JSON이 아닌 응답을 보냈습니다(HTTP ${res.status}, 활용신청·인증키 확인): ` + strip(text).slice(0, 160)); }
