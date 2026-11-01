@@ -137,7 +137,12 @@ async function main() {
       const got = (await fn()).filter((x) => x.id && x.n).filter((x) => !x.end || x.end >= today);
       console.log(`::notice::${name} 진행 중 공고 ${got.length}건`);
       if (got.length) { sources.push(name); results.push(...got); }
-    } catch (e) { errors.push(e.message); console.log(`::error::${e.message}`); }
+    } catch (e) {
+      // 접속 실패면 원인 코드(시간 초과·연결 거부 등)를 함께 남긴다
+      const why = e.cause ? ` (${e.cause.code || e.cause.name || ""} ${e.cause.message || ""})`.trim() : "";
+      const msg = `${name}: ${e.message}${why ? " " + why : ""}`;
+      errors.push(msg); console.log(`::error::${msg}`);
+    }
   }
   // 같은 공고가 두 곳에 있으면 기업마당 쪽을 남긴다
   const seen = new Set();
