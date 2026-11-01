@@ -306,7 +306,8 @@ aside{position:sticky;top:calc(env(safe-area-inset-top,0px) + 12px);max-height:c
     <div class="cats" id="cats" aria-label="용도별 8개 대분류"></div>
     <div class="bar">
       <strong id="count"></strong>
-      <div class="bar-r"><label for="sortSel" class="sr">정렬</label><select id="sortSel"><option value="rec">추천순</option><option value="due">마감 임박순</option></select>
+      <div class="bar-r"><label for="scopeSel" class="sr">실시간 공고 범위</label><select id="scopeSel" hidden><option value="rel">실시간 공고: 소상공인·창업 관련만</option><option value="all">실시간 공고: 전체</option></select>
+      <label for="sortSel" class="sr">정렬</label><select id="sortSel"><option value="rec">추천순</option><option value="due">마감 임박순</option></select>
       <label><input type="checkbox" id="onlyFav"> ★ 저장한 사업만 보기</label></div>
     </div>
     <div class="focusbar" id="focusbar" hidden>친구가 공유한 지원사업입니다. <button class="btn ghost" id="showall" type="button">전체 지원사업 보기</button></div>
@@ -760,6 +761,7 @@ $("region-q").addEventListener("input",drawRegionList);chips($("f-target"),TARGE
 });
 
 function match(p,skipCat){
+  if(p.live&&!p.rel&&$("scopeSel").value==="rel")return false;
   if(state.ind.size&&p.i!=="*"&&![...state.ind].some(k=>p.i.includes(k)||INDS.find(x=>x[0]===k)[2].some(g=>p.i.includes(g))))return false;
   if(state.stage.size&&p.s!=="*"&&!p.s.some(x=>state.stage.has(x)))return false;
   // 지역을 고르면 전국 사업 + 그 지역 사업, 지역 미선택이면 전부
@@ -903,10 +905,13 @@ const hid=(location.hash||"").slice(1);
 if(hid&&P.some(p=>p.id===hid))state.focus=hid;else state.ind.add("korean");
 render();
 $("sortSel").addEventListener("change",()=>{limit=20;render()});
+$("scopeSel").addEventListener("change",()=>{limit=20;render()});
 // 실시간 공고: GitHub Actions가 매일 기업마당 API로 받아 둔 data/notices.json (없으면 조용히 건너뜀)
 // 기업마당 분야(금융·기술…)와 K-Startup 지원분야(사업화·멘토링·융자…)를 앱의 용도 분류로
 const liveCat=c=>/융자|보증|금융/.test(c)?"finance":/인력/.test(c)?"labor":/수출|글로벌|내수|판로/.test(c)?"market":/기술|R&D|연구/.test(c)?"innov":/사업화|창업|멘토링|컨설팅|교육|시설|공간|보육|행사|네트워크/.test(c)?"startup":"innov";
 const SRC_NM={bizinfo:"기업마당",kstartup:"K-Startup"};
+// 소상공인·창업자와 관련 있는 실시간 공고를 고르는 기준(중소기업 R&D·수출·농업 공고 등은 기본으로 숨김)
+const LIVE_REL=/소상공인|자영업|예비창업|전통시장|상점가|골목|상권|점포|가게|소공인|1인 ?창|착한가격|외식|음식점|배달|폐업|재창업|주방|키친|창업벤처/;
 fetch("data/notices.json",{cache:"no-store"}).then(r=>r.ok?r.json():null).then(j=>{
   if(!j||!Array.isArray(j.items))return;
   const t=todayKST();
@@ -918,10 +923,10 @@ fetch("data/notices.json",{cache:"no-store"}).then(r=>r.ok?r.json():null).then(j
     per:x.end?`${x.start.replace(/-/g,".")} ~ ${x.end.replace(/-/g,".")}`:(x.per||"공고 확인"),
     d:x.d||x.n,u:x.u,ap:x.ap||"",ch:x.how||"공고문의 신청 방법 확인",dc:x.tel?"문의: "+x.tel:"",
     k:(x.tags||[]).join(" ")+" "+x.cat+" 실시간",ty:"실시간 공고 · "+(SRC_NM[x.src]||"기업마당")+(x.cat?" · "+x.cat:""),live:true,end:x.end||"",
-    rel:/소상공인|자영업|예비창업|전통시장|상점가/.test(x.n+" "+x.tgt+" "+x.d)}));
+    rel:LIVE_REL.test(x.n+" "+x.tgt+" "+x.d+" "+(x.tags||[]).join(" "))}));
   P.push(...add);
-  $("liveInfo").hidden=false;
-  $("liveInfo").textContent=`${j.source||"기업마당"} 실시간 공고 ${add.length}건 포함 · ${j.updated} 갱신 · 마감 임박순으로 정렬하면 D-day 순서로 볼 수 있어요`;
+  $("liveInfo").hidden=false;$("scopeSel").hidden=false;
+  $("liveInfo").textContent=`${j.source||"기업마당"} 실시간 공고 ${add.length}건 중 소상공인·창업 관련 ${add.filter(p=>p.rel).length}건을 기본으로 보여 드려요(위 메뉴에서 전체 보기 가능) · ${j.updated} 갱신`;
   if(hid&&!state.focus&&add.some(p=>p.id===hid)){state.ind.clear();state.focus=hid}
   render();
 }).catch(()=>{});
