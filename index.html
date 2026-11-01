@@ -157,6 +157,12 @@ aside{position:sticky;top:calc(env(safe-area-inset-top,0px) + 12px);max-height:c
 .tag.src{background:transparent;border:1px solid var(--sky-bg);color:var(--sky-ink)}
 .tag.st{background:var(--warn-bg);color:var(--warn);font-weight:500}
 .org{font-size:13px;color:var(--muted)}
+.dday{display:inline-block;border-radius:6px;padding:2px 8px;font-size:12.5px;font-weight:700;background:var(--sky-bg);color:var(--sky-ink)}
+.dday.soon{background:var(--warn-bg);color:var(--warn);border:1px solid var(--warn)}
+.bar-r{display:flex;gap:12px;align-items:center;flex-wrap:wrap}
+.bar-r select{font:inherit;font-size:14px;padding:6px 8px;border:1px solid var(--line);border-radius:8px;background:var(--surface);color:var(--ink)}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
+.live-info{margin:0 0 10px;font-size:13px;color:var(--sky-ink)}
 .money{display:inline-block;vertical-align:2px;margin-right:6px;font-size:12.5px;font-weight:700;background:var(--sun);color:#3a2400;border-radius:6px;padding:1px 7px}
 .howto{display:grid;gap:6px;border:1px dashed var(--line);border-radius:10px;padding:10px 12px;font-size:13px}
 .howto div{display:grid;grid-template-columns:72px 1fr;gap:8px}
@@ -300,9 +306,11 @@ aside{position:sticky;top:calc(env(safe-area-inset-top,0px) + 12px);max-height:c
     <div class="cats" id="cats" aria-label="용도별 8개 대분류"></div>
     <div class="bar">
       <strong id="count"></strong>
-      <label><input type="checkbox" id="onlyFav"> ★ 저장한 사업만 보기</label>
+      <div class="bar-r"><label for="sortSel" class="sr">정렬</label><select id="sortSel"><option value="rec">추천순</option><option value="due">마감 임박순</option></select>
+      <label><input type="checkbox" id="onlyFav"> ★ 저장한 사업만 보기</label></div>
     </div>
     <div class="focusbar" id="focusbar" hidden>친구가 공유한 지원사업입니다. <button class="btn ghost" id="showall" type="button">전체 지원사업 보기</button></div>
+    <p class="live-info" id="liveInfo" hidden></p>
     <div class="active" id="active" aria-label="선택한 조건"></div>
     <p class="caution" id="caution" hidden></p>
     <div class="list" id="list"></div>
@@ -616,6 +624,8 @@ P.forEach(p=>{
 const pid=p=>{let x=0;const s=p.n+"|"+p.r;for(let i=0;i<s.length;i++)x=(x*31+s.charCodeAt(i))>>>0;return "p"+x.toString(36)};
 {const seen=new Set();P.forEach(p=>{let id=pid(p),k=1;while(seen.has(id))id=pid(p)+"-"+(k++);seen.add(id);p.id=id})}
 // 지원 금액 배지: "최대 5천만원", "150만원" 같은 첫 금액
+const todayKST=()=>new Date(Date.now()+9*3600e3).toISOString().slice(0,10);
+const dday=end=>Math.round((new Date(end+"T00:00:00Z")-new Date(todayKST()+"T00:00:00Z"))/864e5);
 const moneyBadge=s=>{const m=String(s).match(/(최대\s*)?([\d,.]+\s*(?:억|천만|백만|만)?\s*원)/);return m?((m[1]?"최대 ":"")+m[2].replace(/\s+/g,"")):""};
 
 const state={focus:null,q:"",ind:new Set(),stage:new Set(),region:null,target:new Set(),cat:new Set(),fav:false};
@@ -808,7 +818,8 @@ function render(){
 
   // 정렬: 청년 조건이면 청년 사업 먼저, 접수 대기·확인 필요 사업은 맨 뒤
   const vr={ok:0,check:0.5,no:1};
-  const rank=p=>(p.st?2:0)-(state.target.has("youth")&&p.t.includes("youth")?1:0)+(profFilled()?vr[(judge(p)||{v:"ok"}).v]:0);
+  const sortDue=$("sortSel").value==="due";
+  const rank=p=>(sortDue?(p.end?dday(p.end)/1000:5):0)+(p.live&&!sortDue?(p.rel?0.6:0.8):0)+(p.st?2:0)-(state.target.has("youth")&&p.t.includes("youth")?1:0)+(profFilled()?vr[(judge(p)||{v:"ok"}).v]:0);
   const res=window.__only?[window.__only]:base.filter(p=>!state.cat.size||state.cat.has(p.c)).sort((a,b)=>rank(a)-rank(b));
   $("count").innerHTML=`받을 수 있는 지원사업 <em>${res.length}건</em>`;
   if(profFilled()){const all=P.filter(p=>match(p,false)).map(judge);const c=v=>all.filter(j=>j&&j.v===v).length;$("eligSum").textContent=`해당 가능 ${c("ok")} · 확인 필요 ${c("check")} · 해당 안 됨 ${c("no")}`}else $("eligSum").textContent="";
@@ -834,13 +845,14 @@ function render(){
     if(p.st)tags.push(`<span class="tag st">${p.st==="wait"?"이번 회차 마감 · 다음 공고 대기":"선착순 · 마감 여부 확인"}</span>`);
     if(p.ty)tags.push(`<span class="tag src">${esc(p.ty)}</span>`);
     const badge=p.c==="insure"?"":moneyBadge(p.amt);
+    const dd=p.end?dday(p.end):null;
     const jd=judge(p);
     const VL={ok:"해당 가능",check:"확인 필요",no:"해당 안 됨"};
     const goUrl=p.ap||p.u;
     const goLabel=p.ap?"신청하러 가기 →":(p.gl?p.gl+"에서 찾기 →":"공고 보고 신청하기 →");
     el.id=p.id;
     el.innerHTML=`<div class="head"><div style="display:grid;gap:4px;min-width:0">
-      <div class="meta">${jd?`<span class="vd vd-${jd.v}">${VL[jd.v]}</span>`:""}${tags.join("")}</div>
+      <div class="meta">${dd!==null?`<span class="dday${dd<=7?" soon":""}">${dd===0?"오늘 마감":"D-"+dd}</span>`:""}${jd?`<span class="vd vd-${jd.v}">${VL[jd.v]}</span>`:""}${tags.join("")}</div>
       <h3>${badge?`<span class="money">${esc(badge)}</span>`:""}${esc(p.n)}</h3><div class="org">${esc(p.a)}</div>${jd?`<div class="vwhy vw-${jd.v}">${esc(jd.why)}</div>`:""}</div></div>
       <div class="benefit"><small>지원 내용</small><b>${esc(p.amt)}</b></div>
       <p class="desc">${esc(p.d)}</p>
@@ -890,6 +902,27 @@ try{const mq=window.matchMedia("(max-width:880px)");$("filters").open=!mq.matche
 const hid=(location.hash||"").slice(1);
 if(hid&&P.some(p=>p.id===hid))state.focus=hid;else state.ind.add("korean");
 render();
+$("sortSel").addEventListener("change",()=>{limit=20;render()});
+// 실시간 공고: GitHub Actions가 매일 기업마당 API로 받아 둔 data/notices.json (없으면 조용히 건너뜀)
+const LIVE_CAT={금융:"finance",기술:"innov",인력:"labor",수출:"market",내수:"market",창업:"startup",경영:"innov",기타:"innov"};
+fetch("data/notices.json",{cache:"no-store"}).then(r=>r.ok?r.json():null).then(j=>{
+  if(!j||!Array.isArray(j.items))return;
+  const t=todayKST();
+  const add=j.items.filter(x=>!x.end||x.end>=t).map(x=>({
+    id:"b"+String(x.id).replace(/[^A-Za-z0-9]/g,"").slice(-12),
+    n:x.n,a:x.a+(x.ex&&x.ex!==x.a?" · "+x.ex:""),c:LIVE_CAT[x.cat]||"innov",i:"*",s:"*",r:x.r||"all",
+    t:/청년/.test(x.n+" "+x.tgt)?["youth"]:[],
+    amt:x.tgt?"지원대상: "+x.tgt:"지원 내용은 공고 확인",
+    per:x.end?`${x.start.replace(/-/g,".")} ~ ${x.end.replace(/-/g,".")}`:(x.per||"공고 확인"),
+    d:x.d||x.n,u:x.u,ap:x.ap||"",ch:x.how||"공고문의 신청 방법 확인",dc:x.tel?"문의: "+x.tel:"",
+    k:(x.tags||[]).join(" ")+" "+x.cat+" 실시간",ty:"실시간 공고 · 기업마당 · "+x.cat,live:true,end:x.end||"",
+    rel:/소상공인|자영업|예비창업|전통시장|상점가/.test(x.n+" "+x.tgt+" "+x.d)}));
+  P.push(...add);
+  $("liveInfo").hidden=false;
+  $("liveInfo").textContent=`기업마당 실시간 공고 ${add.length}건 포함 · ${j.updated} 갱신 · 마감 임박순으로 정렬하면 D-day 순서로 볼 수 있어요`;
+  if(hid&&!state.focus&&add.some(p=>p.id===hid)){state.ind.clear();state.focus=hid}
+  render();
+}).catch(()=>{});
 </script>
 
 </body>
