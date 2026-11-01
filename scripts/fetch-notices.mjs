@@ -68,6 +68,7 @@ async function fetchBizinfo() {
   const text = await res.text();
   let json;
   try { json = JSON.parse(text); } catch { throw new Error("기업마당 API가 JSON이 아닌 응답을 보냈습니다(인증키 확인): " + strip(text).slice(0, 160)); }
+  if (json && json.reqErr) throw new Error("기업마당 API 오류: " + strip(json.reqErr) + " (기업마당에서 발급한 인증키인지 확인)");
   const items = itemsOf(json);
   // 0건이면 응답 앞부분을 남겨 원인(인증키 오류 메시지 등)을 볼 수 있게 한다. 응답에는 인증키가 들어 있지 않다.
   if (!items.length) console.log("::warning::기업마당 응답에 공고가 없습니다. 응답 앞부분: " + strip(text).replace(BIZINFO_KEY, "(키)").slice(0, 300));
