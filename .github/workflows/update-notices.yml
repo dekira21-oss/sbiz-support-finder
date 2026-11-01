@@ -21,6 +21,9 @@ jobs:
       - uses: actions/setup-node@v5
         with:
           node-version: 22
+      - name: 키 등록 위치 점검(값은 출력하지 않음)
+        run: |
+          echo "::notice::Repository secret BIZINFO_KEY 있음=${{ secrets.BIZINFO_KEY != '' }} / Variables BIZINFO_KEY 있음=${{ vars.BIZINFO_KEY != '' }}"
       - name: 공고 받아오기
         env:
           BIZINFO_KEY: ${{ secrets.BIZINFO_KEY }}
