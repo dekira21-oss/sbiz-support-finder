@@ -44,9 +44,6 @@ header.top .wrap{padding-block:30px 26px}
 @media (max-width:520px){.hero{grid-template-columns:1fr}.hero-art{display:none}}
 .eyebrow{font-size:13px;font-weight:500;opacity:.85}
 .topline{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}
-.share{font:inherit;font-size:13.5px;font-weight:700;background:var(--sun);color:#3a2400;border:0;border-radius:999px;padding:7px 14px;cursor:pointer}
-.share:hover{filter:brightness(1.05)}
-.copied{margin:0;font-size:13px;background:rgba(0,0,0,.18);border-radius:8px;padding:8px 10px;overflow-wrap:anywhere}
 .disclaim{background:var(--sun-bg);border:1px solid var(--sun);border-radius:10px;padding:12px 14px;font-size:13.5px;color:var(--ink);margin:0}
 h1{margin:0;font-size:clamp(24px,4vw,34px);font-weight:700;line-height:1.3;text-wrap:balance}
 .lede{margin:0;opacity:.9;max-width:60ch}
@@ -168,13 +165,11 @@ aside{position:sticky;top:calc(env(safe-area-inset-top,0px) + 12px);max-height:c
 .howto div{display:grid;grid-template-columns:72px 1fr;gap:8px}
 .howto span{color:var(--sky-ink);font-weight:700;font-size:12px}
 .howto b{font-weight:500;overflow-wrap:anywhere}
-.copied-one{margin:0;font-size:12.5px;color:var(--muted);overflow-wrap:anywhere}
 .focusbar{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;background:var(--sky-bg);color:var(--ink);border-radius:10px;padding:10px 12px;margin-bottom:12px;font-size:14px}
 .benefit{background:var(--sun-bg);border-radius:10px;padding:10px 12px;display:grid;gap:2px}
 .benefit small{font-size:12px;color:var(--sun-ink);font-weight:700}
 .benefit b{font-size:15px;font-weight:700;color:var(--ink);overflow-wrap:anywhere}
-.card p.desc{margin:0;color:var(--ink);display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
-.card.open p.desc{display:block}
+.card p.desc{margin:0;color:var(--ink)}
 .facts{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;font-size:13px}
 @media (max-width:560px){.facts{grid-template-columns:1fr}}
 .facts div{display:grid;gap:1px;min-width:0}
@@ -186,7 +181,6 @@ aside{position:sticky;top:calc(env(safe-area-inset-top,0px) + 12px);max-height:c
 .btn.primary:hover{background:var(--g-deep);border-color:var(--g-deep)}
 .btn.ghost{background:var(--surface);color:var(--ink);border:1px solid var(--line)}
 .btn.ghost[aria-pressed="true"]{color:var(--sun-ink);border-color:var(--sun);background:var(--sun-bg)}
-.more{font:inherit;font-size:13px;background:none;border:0;color:var(--sky-ink);cursor:pointer;padding:0;margin-left:auto}
 .empty{background:var(--surface);border:1px dashed var(--line);border-radius:14px;padding:28px;color:var(--muted);text-align:center}
 .loadmore{font:inherit;font-size:15px;font-weight:700;width:100%;padding:13px;border-radius:12px;border:1px solid var(--g);background:var(--surface);color:var(--g-deep);cursor:pointer}
 .loadmore:hover{background:var(--mint)}
@@ -207,9 +201,7 @@ aside{position:sticky;top:calc(env(safe-area-inset-top,0px) + 12px);max-height:c
 <body>
 
 <header class="top"><div class="wrap hero"><div class="hero-text">
-  <div class="topline"><span class="eyebrow">소상공인 정부·지자체 지원사업 통합검색 · 2026.11.1 기준</span>
-    <button class="share" id="share" type="button">링크 복사해서 공유하기</button></div>
-  <p class="copied" id="copied" hidden></p>
+  <div class="topline"><span class="eyebrow">소상공인 정부·지자체 지원사업 통합검색 · 2026.11.1 기준</span></div>
   <h1>내 가게에 맞는 <em>지원금</em>, 한 번에 찾기</h1>
   <p class="lede">업종과 지역만 고르면 창업자금, 인건비, 정책자금, 경영개선, 폐업·재기 지원까지 받을 수 있는 사업을 추려 드립니다.</p>
   <div class="search">
@@ -863,20 +855,9 @@ function render(){
       <div class="actions"><a class="btn primary" href="${goUrl}" target="_blank" rel="noopener">${goLabel}</a>
       ${p.ap?`<a class="btn ghost" href="${p.u}" target="_blank" rel="noopener">공고 원문 보기</a>`:""}
       <button class="btn ghost fav" type="button" aria-pressed="${on}">${on?"★ 저장됨":"☆ 저장"}</button>
-      <button class="btn ghost shr" type="button">친구에게 공유</button>
-      <button class="more" type="button">설명 더 보기</button></div>
-      <p class="copied-one" hidden></p>`;
+</div>`;
     el.querySelector(".fav").onclick=()=>{favs.has(p.n)?favs.delete(p.n):favs.add(p.n);saveFavs();render()};
-    el.querySelector(".shr").onclick=()=>{
-      const link=SHARE_URL+"#"+p.id, msg=el.querySelector(".copied-one");msg.hidden=false;
-      const ok=()=>{msg.textContent="이 사업 링크를 복사했습니다: "+link};
-      const no=()=>{msg.textContent="아래 주소를 길게 눌러 복사하세요: "+link;const r=document.createRange();r.selectNodeContents(msg);const sel=getSelection();sel.removeAllRanges();sel.addRange(r)};
-      try{navigator.clipboard.writeText(link).then(ok,no)}catch(err){no()}
-    };
-    const more=el.querySelector(".more");
-    more.onclick=()=>{el.classList.toggle("open");more.textContent=el.classList.contains("open")?"설명 접기":"설명 더 보기"};
     list.appendChild(el);
-    requestAnimationFrame(()=>{const d=el.querySelector(".desc");if(d.scrollHeight<=d.clientHeight+2)more.hidden=true});
   });
   lm.hidden=res.length<=limit;
   lm.textContent=`더 보기 (${res.length-limit}건 남음)`;
@@ -888,12 +869,6 @@ $("profReset").onclick=()=>{prof={};saveProf();PROF_KEYS.forEach(k=>$("pf-"+k).v
 $("showall").onclick=()=>{state.focus=null;try{history.replaceState(null,"",location.pathname+location.search)}catch(e){}render()};
 // 공유 링크: 배포 주소가 바뀌면 이 값만 고치면 된다
 const SHARE_URL="https://dekira21-oss.github.io/sbiz-support-finder/";
-$("share").onclick=()=>{
-  const msg=$("copied");msg.hidden=false;
-  const done=()=>{msg.textContent="링크를 복사했습니다. 카카오톡이나 문자에 붙여넣어 공유하세요: "+SHARE_URL};
-  const fail=()=>{msg.textContent="아래 주소를 길게 눌러 복사하세요: "+SHARE_URL;const r=document.createRange();r.selectNodeContents(msg);const s=getSelection();s.removeAllRanges();s.addRange(r)};
-  try{navigator.clipboard.writeText(SHARE_URL).then(done,fail)}catch(e){fail()}
-};
 $("q").addEventListener("input",e=>{state.q=e.target.value.trim();limit=20;render()});
 $("onlyFav").addEventListener("change",e=>{state.fav=e.target.checked;render()});
 $("reset").onclick=()=>{state.q="";$("q").value="";$("ind-q").value="";$("region-q").value="";state.ind.clear();state.stage.clear();state.target.clear();state.region=null;state.cat.clear();render()};
