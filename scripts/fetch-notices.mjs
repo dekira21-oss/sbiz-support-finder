@@ -119,8 +119,11 @@ export function normalizeKstartup(it) {
 
 async function fetchKstartup() {
   const all = [];
-  for (let page = 1; page <= 20; page++) {
-    const qs = new URLSearchParams({ page: String(page), perPage: "500", returnType: "json", "cond[rcrt_prgs_yn::EQ]": "Y" });
+  // 서버가 모집 진행 여부 조건을 무시하고 한 번에 200건까지만 주므로, 마감일이 오늘 이후인 공고만 요청해 끝까지 넘겨 받는다
+  const today8 = todayKST().replace(/-/g, "");
+  for (let page = 1; page <= 60; page++) {
+    const qs = new URLSearchParams({ page: String(page), perPage: "200", returnType: "json",
+      "cond[rcrt_prgs_yn::EQ]": "Y", "cond[pbanc_rcpt_end_dt::GTE]": today8 });
     const url = `${KSTARTUP_API}?serviceKey=${encodeURIComponent(DATA_GO_KR_KEY)}&${qs}`;
     const res = await fetch(url, { headers: { Accept: "application/json" } });
     const text = await res.text();
@@ -129,10 +132,11 @@ async function fetchKstartup() {
     const rows = Array.isArray(json.data) ? json.data : [];
     if (page === 1 && rows[0]) console.log("::notice::K-Startup 응답 항목: " + Object.keys(rows[0]).join(", "));
     all.push(...rows);
-    const total = Number(json.totalCount || json.matchCount || 0);
-    if (page === 1) console.log(`::notice::K-Startup 전체 ${total}건, 한 번에 ${rows.length}건씩 받음`);
+    const total = Number(json.matchCount || json.totalCount || 0);
+    if (page === 1) console.log(`::notice::K-Startup 조건에 맞는 공고 ${json.matchCount}건(전체 ${json.totalCount}건), 한 번에 ${rows.length}건씩 받음`);
     if (!rows.length || all.length >= total) break;
   }
+  console.log(`::notice::K-Startup에서 받은 공고 ${all.length}건`);
   return all.map(normalizeKstartup);
 }
 
