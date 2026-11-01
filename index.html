@@ -96,6 +96,25 @@ aside{position:sticky;top:calc(env(safe-area-inset-top,0px) + 12px);max-height:c
 .reset{font:inherit;font-size:14px;margin:4px 16px 16px;padding:10px;border-radius:8px;border:1px solid var(--line);background:var(--soft);color:var(--muted);cursor:pointer}
 .reset:hover{color:var(--ink);border-color:var(--muted)}
 
+/* 자격 확인 */
+.elig{background:var(--mint);border-radius:14px;padding:16px;margin-bottom:22px;display:grid;gap:12px}
+.elig .sec-sub{margin-bottom:0}
+.elig-grid{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:10px}
+@media (max-width:1100px){.elig-grid{grid-template-columns:repeat(3,minmax(0,1fr))}}
+@media (max-width:560px){.elig-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.ef{display:grid;gap:4px;min-width:0}
+.ef span{font-size:12.5px;font-weight:700;color:var(--g-deep)}
+.ef select{font:inherit;font-size:14px;padding:9px 8px;border:1px solid var(--line);border-radius:8px;background:var(--surface);color:var(--ink);min-width:0;width:100%}
+.elig-foot{display:flex;flex-wrap:wrap;gap:10px;align-items:center;font-size:14px}
+.elig-foot label{display:flex;gap:6px;align-items:center;cursor:pointer}
+.elig-sum{font-weight:700;color:var(--g-deep);margin-left:auto}
+.vd{display:inline-block;border-radius:6px;padding:2px 8px;font-size:12.5px;font-weight:700}
+.vd-ok{background:var(--g);color:var(--g-ink)}
+.vd-check{background:var(--sun);color:#3a2400}
+.vd-no{background:var(--soft);color:var(--muted);border:1px solid var(--line)}
+.vwhy{font-size:13px}
+.vw-ok{color:var(--g-deep)}.vw-check{color:var(--sun-ink)}.vw-no{color:var(--muted)}
+
 /* 용도 타일 */
 .sec-h{margin:0;font-size:18px;font-weight:700}
 .sec-sub{margin:2px 0 12px;font-size:14px;color:var(--muted)}
@@ -262,6 +281,20 @@ aside{position:sticky;top:calc(env(safe-area-inset-top,0px) + 12px);max-height:c
     <button class="reset" id="reset" type="button">조건 모두 지우기</button>
   </div></details></aside>
   <section style="min-width:0">
+    <section class="elig" aria-labelledby="elig-h">
+      <div class="elig-top"><div><h2 id="elig-h" class="sec-h">나도 받을 수 있나?</h2>
+      <p class="sec-sub">가게 정보를 고르면 사업마다 <b class="vd vd-ok">해당 가능</b> <b class="vd vd-check">확인 필요</b> <b class="vd vd-no">해당 안 됨</b>을 표시해 드려요. 입력한 정보는 이 기기에만 저장됩니다.</p></div></div>
+      <div class="elig-grid">
+        <label class="ef"><span>업력</span><select id="pf-yr"><option value="">선택 안 함</option><option value="pre">예비창업(사업자 등록 전)</option><option value="y1">1년 미만</option><option value="y3">1~3년</option><option value="y7">3~7년</option><option value="y8">7년 이상</option><option value="close">폐업했거나 폐업 예정</option></select></label>
+        <label class="ef"><span>작년 연매출</span><select id="pf-sales"><option value="">선택 안 함</option><option value="s0">매출 없음</option><option value="s1">1억 400만원 미만</option><option value="s2">1억 400만원~3억원</option><option value="s3">3억~10억원</option><option value="s4">10억원 이상</option></select></label>
+        <label class="ef"><span>직원 수(대표 제외)</span><select id="pf-emp"><option value="">선택 안 함</option><option value="e0">없음(1인 사업자)</option><option value="e1">1~4명</option><option value="e5">5~9명</option><option value="e10">10~49명</option><option value="e50">50명 이상</option></select></label>
+        <label class="ef"><span>대표 나이</span><select id="pf-age"><option value="">선택 안 함</option><option value="a1">만 39세 이하</option><option value="a2">40~49세</option><option value="a3">50~64세</option><option value="a4">65세 이상</option></select></label>
+        <label class="ef"><span>대표 본인 고용보험</span><select id="pf-ei"><option value="">선택 안 함</option><option value="yes">가입함</option><option value="no">가입 안 함</option></select></label>
+      </div>
+      <div class="elig-foot"><label><input type="checkbox" id="hideNo" checked> 해당 안 되는 사업 숨기기</label>
+      <button class="btn ghost" id="profReset" type="button">입력 지우기</button><span class="elig-sum" id="eligSum"></span></div>
+      <p class="hint">업력·매출·직원 수·나이 같은 기본 조건만 판정합니다. 신용, 세금 체납, 업종 제한 등 세부 자격은 공고문에서 확인하세요.</p>
+    </section>
     <h2 class="sec-h">어떤 지원이 필요하세요?</h2>
     <p class="sec-sub">검색하고 싶은 지원 사업에 체크하세요. 여러 개를 함께 고를 수 있습니다.</p>
     <div class="cats" id="cats" aria-label="용도별 8개 대분류"></div>
@@ -593,6 +626,64 @@ const label=(arr,k)=>(arr.find(x=>x[0]===k)||[,k])[1];
 const esc=s=>String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
 const $=id=>document.getElementById(id);
 
+// ── 나도 받을 수 있나? (기본 조건 판정) ─────────────────────────────
+// 판정은 업력·매출·직원 수·나이·고용보험 같은 기본 조건만 본다. 최종 자격은 공고문 기준.
+const PROF_KEYS=["yr","sales","emp","age","ei"];
+let prof={};
+try{prof=JSON.parse(localStorage.getItem("sbiz-prof")||"{}")||{}}catch(e){prof={}}
+const saveProf=()=>{try{localStorage.setItem("sbiz-prof",JSON.stringify(prof))}catch(e){}};
+const profFilled=()=>PROF_KEYS.some(k=>prof[k]);
+// 업력 코드 → 앱의 사업 단계
+const YR_STAGE={pre:"pre",y1:"early",y3:"early",y7:"grow",y8:"grow",close:"close"};
+const yrNum={pre:0,y1:0.5,y3:2,y7:5,y8:10,close:null};
+const LOW_SALES=s=>s==="s0"||s==="s1";            // 연매출 1억 400만원 미만
+const empNum={e0:0,e1:2,e5:7,e10:20,e50:60};
+const ageNum={a1:30,a2:45,a3:57,a4:70};
+// 소상공인 기준 직원 수(제조·건설·운수는 10인 미만, 그 밖 5인 미만)
+const smallLimit=()=>[...state.ind].some(k=>{const it=INDS.find(x=>x[0]===k);return it&&it[2].some(g=>["make","const","trans"].includes(g))})?10:5;
+const isSmallBizProgram=p=>/소상공인/.test(p.n+p.a)&&!/보증기금|중소벤처기업진흥공단/.test(p.a);
+// 사업별 추가 규칙: [판정, 이유]를 돌려주거나 없으면 null
+const RULES={
+ "소상공인 경영안정 바우처":()=>prof.yr==="pre"?["no","2025년 말 이전 개업자만 대상"]:prof.sales&&!LOW_SALES(prof.sales)?["no","2025년 연매출 1억 400만원 미만만 대상"]:prof.sales?["ok","연매출 기준 충족"]:null,
+ "소상공인 정책자금(일시적경영애로자금)":()=>prof.sales&&!LOW_SALES(prof.sales)?["no","연매출 1억 400만원 미만만 대상"]:prof.yr==="y8"?["no","업력 7년 미만만 대상"]:null,
+ "소상공인 정책자금(청년고용연계자금)":()=>prof.age==="a1"&&(prof.yr==="y1"||prof.yr==="y3")?["ok","업력 3년 미만 청년 대표"]:["check","청년 근로자를 고용했다면 대상"],
+ "신용취약소상공인자금":()=>["check","신용점수(NCB 839점 이하)와 교육 이수 확인 필요"],
+ "소상공인 정책자금(장애인기업지원자금)":()=>["check","장애인복지카드·장애인기업확인서 필요"],
+ "소상공인 정책자금(대환대출)":()=>["check","고금리 대출이 있는 중·저신용자 대상"],
+ "두루누리 사회보험료 지원":()=>prof.emp==="e0"?["no","근로자가 있어야 신청 가능"]:prof.emp&&empNum[prof.emp]>=10?["no","근로자 10명 미만 사업장만 대상"]:prof.emp?["ok","10명 미만 사업장"]:null,
+ "자영업자 고용보험료 지원":()=>prof.emp&&prof.emp!=="e0"?["check","1인 자영업자 중심, 50인 미만 사업주 확인"]:null,
+ "고용보험 미적용자 출산급여":()=>prof.ei==="yes"?["no","고용보험에 가입했다면 고용보험 출산급여 대상"]:["check","출산(유산·사산)한 경우 대상"],
+ "청년일자리도약장려금":()=>prof.emp==="e1"?["check","5인 이상 기업이 기본(지식서비스·청년창업기업 등은 1인 이상)"]:null,
+ "예비창업패키지":()=>prof.yr&&prof.yr!=="pre"?["no","사업자 등록 전 예비창업자만 대상"]:null,
+ "초기창업패키지":()=>prof.yr&&!["y1","y3"].includes(prof.yr)?["no","업력 3년 이내만 대상"]:null,
+ "창업도약패키지":()=>prof.yr&&prof.yr!=="y7"?["no","업력 3~7년만 대상"]:null,
+ "희망리턴패키지":()=>prof.yr==="close"?["ok","폐업(예정) 소상공인 대상"]:prof.yr?["check","폐업 예정이거나 재기·재취업을 준비할 때 대상"]:null,
+ "백년가게·백년소공인 육성":()=>prof.yr&&prof.yr!=="y8"?["no","업력 30년 이상(제조 15년) 점포 대상"]:["check","업력 30년 이상인지 확인"],
+ "새출발기금(채무조정)":()=>["check","상환이 어려운 대출이 있을 때 대상"],
+ "노란우산 공제":()=>prof.yr==="pre"?["no","사업자 등록 후 가입"]:null
+};
+function judge(p){
+  if(!profFilled())return null;
+  const why=[];let v="ok";
+  const worse=(nv,r)=>{const o={ok:0,check:1,no:2};if(o[nv]>o[v])v=nv;if(r)why.push(r)};
+  // 사업 단계
+  const st=YR_STAGE[prof.yr];
+  if(st&&!RULES[p.n]&&p.s!=="*"&&!p.s.includes(st))worse(p.ty?"check":"no",p.ty?`${label(STAGES,st)} 단계도 대상인지 공고 확인`:`${p.s.map(k=>label(STAGES,k)).join("·")} 대상 사업`);
+  // 청년 전용
+  if(p.yo&&prof.age&&prof.age!=="a1")worse("no","만 39세 이하 청년 대상");
+  // 직원을 고용해야 받는 사업
+  if(p.t.includes("employer")&&prof.emp==="e0")worse("no","직원을 고용해야 신청 가능");
+  // 소상공인 규모 기준
+  if(prof.emp&&isSmallBizProgram(p)&&empNum[prof.emp]>=smallLimit())worse("no",`소상공인(상시근로자 ${smallLimit()}인 미만) 대상`);
+  // 사업별 규칙
+  const r=RULES[p.n]&&RULES[p.n]();
+  if(r)worse(r[0],r[1]);
+  // 마감된 회차
+  if(p.st==="wait")worse("check","이번 회차 접수 마감");
+  if(v==="ok"&&!why.length)why.push("입력한 기본 조건에 맞음");
+  return {v,why:why[0]};
+}
+
 function chips(el,arr,key,single){
   el.innerHTML="";
   arr.forEach(([k,l])=>{
@@ -702,7 +793,8 @@ function render(){
 
   if(state.focus){const one=P.find(p=>p.id===state.focus);if(one){showFocus(one);return}state.focus=null}
   $("focusbar").hidden=true;
-  const base=P.filter(p=>match(p,true));
+  const hideNo=$("hideNo").checked&&profFilled();
+  const base=P.filter(p=>match(p,true)).filter(p=>!(hideNo&&(judge(p)||{}).v==="no"));
   const cats=$("cats");cats.innerHTML="";
   CATS.forEach(([k,l],idx)=>{
     const n=base.filter(p=>p.c===k).length;
@@ -715,9 +807,11 @@ function render(){
   });
 
   // 정렬: 청년 조건이면 청년 사업 먼저, 접수 대기·확인 필요 사업은 맨 뒤
-  const rank=p=>(p.st?2:0)-(state.target.has("youth")&&p.t.includes("youth")?1:0);
+  const vr={ok:0,check:0.5,no:1};
+  const rank=p=>(p.st?2:0)-(state.target.has("youth")&&p.t.includes("youth")?1:0)+(profFilled()?vr[(judge(p)||{v:"ok"}).v]:0);
   const res=window.__only?[window.__only]:base.filter(p=>!state.cat.size||state.cat.has(p.c)).sort((a,b)=>rank(a)-rank(b));
   $("count").innerHTML=`받을 수 있는 지원사업 <em>${res.length}건</em>`;
+  if(profFilled()){const all=P.filter(p=>match(p,false)).map(judge);const c=v=>all.filter(j=>j&&j.v===v).length;$("eligSum").textContent=`해당 가능 ${c("ok")} · 확인 필요 ${c("check")} · 해당 안 됨 ${c("no")}`}else $("eligSum").textContent="";
   const act=$("active");act.innerHTML="";
   const addAct=(text,off)=>{const b=document.createElement("button");b.type="button";b.className="picked";b.textContent=text+" ✕";b.setAttribute("aria-label",text+" 조건 해제");b.onclick=()=>{off();limit=20;render()};act.appendChild(b)};
   [...state.ind].forEach(k=>addAct(label(INDS,k),()=>state.ind.delete(k)));
@@ -740,12 +834,14 @@ function render(){
     if(p.st)tags.push(`<span class="tag st">${p.st==="wait"?"이번 회차 마감 · 다음 공고 대기":"선착순 · 마감 여부 확인"}</span>`);
     if(p.ty)tags.push(`<span class="tag src">${esc(p.ty)}</span>`);
     const badge=p.c==="insure"?"":moneyBadge(p.amt);
+    const jd=judge(p);
+    const VL={ok:"해당 가능",check:"확인 필요",no:"해당 안 됨"};
     const goUrl=p.ap||p.u;
     const goLabel=p.ap?"신청하러 가기 →":(p.gl?p.gl+"에서 찾기 →":"공고 보고 신청하기 →");
     el.id=p.id;
     el.innerHTML=`<div class="head"><div style="display:grid;gap:4px;min-width:0">
-      <div class="meta">${tags.join("")}</div>
-      <h3>${badge?`<span class="money">${esc(badge)}</span>`:""}${esc(p.n)}</h3><div class="org">${esc(p.a)}</div></div></div>
+      <div class="meta">${jd?`<span class="vd vd-${jd.v}">${VL[jd.v]}</span>`:""}${tags.join("")}</div>
+      <h3>${badge?`<span class="money">${esc(badge)}</span>`:""}${esc(p.n)}</h3><div class="org">${esc(p.a)}</div>${jd?`<div class="vwhy vw-${jd.v}">${esc(jd.why)}</div>`:""}</div></div>
       <div class="benefit"><small>지원 내용</small><b>${esc(p.amt)}</b></div>
       <p class="desc">${esc(p.d)}</p>
       <div class="facts"><div><span>업종</span><b>${esc(inds)}</b></div><div><span>사업 단계</span><b>${esc(stg)}</b></div><div><span>접수</span><b>${esc(p.per)}</b></div></div>
@@ -772,6 +868,9 @@ function render(){
   lm.textContent=`더 보기 (${res.length-limit}건 남음)`;
 }
 $("loadmore").onclick=()=>{limit+=20;render()};
+PROF_KEYS.forEach(k=>{const s=$("pf-"+k);s.value=prof[k]||"";s.addEventListener("change",()=>{if(s.value)prof[k]=s.value;else delete prof[k];saveProf();limit=20;render()})});
+$("hideNo").addEventListener("change",()=>{limit=20;render()});
+$("profReset").onclick=()=>{prof={};saveProf();PROF_KEYS.forEach(k=>$("pf-"+k).value="");limit=20;render()};
 $("showall").onclick=()=>{state.focus=null;try{history.replaceState(null,"",location.pathname+location.search)}catch(e){}render()};
 // 공유 링크: 배포 주소가 바뀌면 이 값만 고치면 된다
 const SHARE_URL="https://dekira21-oss.github.io/sbiz-support-finder/";
