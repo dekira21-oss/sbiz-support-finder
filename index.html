@@ -392,7 +392,6 @@ const P=[
 {n:"푸른씨앗(중소기업퇴직연금기금)",a:"근로복지공단",c:"labor",i:"*",s:["early","grow"],r:"all",t:["employer"],amt:"저소득 근로자 퇴직연금 부담금 10%를 사업주·근로자에게 각각 지원(최대 3년)",per:"상시 가입",d:"작은 사업장이 직원 퇴직연금을 공단 기금에 맡기면 월평균보수 기준 미만 근로자의 사용자 부담금 10%를 3년간 더 적립해 줍니다. 별도 신청 없이 자동 적용되며, 2026년 7월부터 50인 미만 사업장까지 가입할 수 있습니다.",u:"https://www.comwel.or.kr",k:"퇴직연금 퇴직금 근로복지공단"},
 {n:"서울형 이음공제",a:"서울시·중소벤처기업진흥공단",c:"labor",i:"*",s:["early","grow"],r:"seoul",t:["employer"],amt:"근로자 3년 근속 시 1,224만원 적립, 기업 납입액 최대 864만원 환급",per:"2026년 500명, 예산 소진 시 마감",d:"서울시민 청년(19~39세)이나 중장년(50~64세)을 정규직으로 새로 채용한 중소기업과 근로자가 함께 적립하고 서울시가 보탭니다. 기업이 청년과 중장년을 모두 채용해 1년 이상 고용하면 기업 납입액을 돌려받습니다.",u:"https://news.seoul.go.kr/economy/archives/572616",k:"서울 청년 중장년 채용 장기재직 공제"},
 {n:"서울형 강소기업 근무환경개선금",a:"서울시",c:"labor",i:"*",s:["grow"],r:"seoul",t:["employer","youth"],amt:"청년 정규직 1인당 최대 1,500만원(기업당 3명, 4,500만원)",per:"2027년 협약 모집 2026.5.26~6.22(다음 공고 대기)",d:"서울 본사, 업력 2년 이상, 공공기관 인증을 가진 중소기업 중 강소기업으로 선정되면 서울 청년(18~39세)을 정규직으로 채용할 때 복지·근무환경 개선비를 지원합니다.",u:"https://job.seoul.go.kr",k:"서울 강소기업 청년 정규직",st:"wait"},
-{n:"신중년 적합직무 고용장려금",a:"고용노동부",c:"labor",i:"*",s:["early","grow"],r:"all",t:["employer"],amt:"1인당 월 최대 80만원, 최대 1년",per:"연중",d:"만 50세 이상 구직자를 사무·전문 등 적합직무에 채용한 사업주에게 인건비를 지원합니다.",u:"https://www.work24.go.kr",k:"중장년 50세 채용"},
 // 창업·교육
 {n:"신사업창업사관학교",a:"소상공인시장진흥공단",c:"startup",i:["food","retail","beauty","make","online","edu"],s:["pre"],r:"all",t:[],amt:"사업화 자금 최대 4천만원(자부담 50%)",per:"연초 공고",d:"유망 아이템 예비창업자에게 이론 교육, 점포 경영체험, 멘토링, 사업화 자금을 묶어 지원합니다.",u:"https://www.sbiz24.kr",k:"예비창업 교육 점포체험"},
 {n:"예비창업패키지",ty:"2026 통합공고 · 사업화 · 예산 491억원",a:"중소벤처기업부·창업진흥원",c:"startup",i:["online","make","edu","beauty","food"],s:["pre"],r:"all",t:[],amt:"사업화 자금 최대 1억원(평균 5천만원 내외)",per:"연초 공고",d:"혁신 기술·아이템을 가진 예비창업자에게 사업화 자금, 창업교육, 멘토링을 지원합니다.",u:"https://www.k-startup.go.kr",k:"예비창업 사업화 기술"},
@@ -587,7 +586,16 @@ const SINBO={ch:"보증드림 앱(비대면) 또는 지역 신용보증재단 �
 ["www.koreg.or.kr","www.busansinbo.or.kr","www.ttg.co.kr","www.icsinbo.or.kr","www.gjsinbo.or.kr","www.ulsanshinbo.co.kr","www.gcgf.or.kr","www.gwsinbo.or.kr","www.cbsinbo.or.kr"].forEach(h=>LINK_BY_HOST[h]=SINBO);
 LINK_BY_HOST["xn--jj0bzcx22cxqefnt.kr"]=LINK_BY_HOST["새출발기금.kr"];
 // 사업별로 확인한 주소·상태
+const W24="https://www.work24.go.kr";
+const W24_LOGIN="고용24 기업회원 로그인 후 바로 이 장려금 신청 화면으로 이동합니다. 관할 고용센터 방문 신청도 가능합니다.";
 const LINK_BY_NAME={
+ "청년일자리도약장려금":{u:W24+"/wk/k/h/1200/retrieveYngJumpIndivSptfndIntro.do",ul:"사업 안내 보기",ap:W24+"/wk/k/a/1430/operOrgList.do",apl:"담당 운영기관 찾기 →",ch:"지역 운영기관(상공회의소 등)에 참여 신청합니다. 운영기관 목록에서 우리 지역 담당 기관과 전화번호를 확인하세요."},
+ "고용촉진장려금":{u:W24+"/sa/a/b/0010/selectEbplPmtnEnamRqdoBprpDctnDgns.do",ap:W24+"/sa/a/b/0010/selectEbplPmtnEnamRqdoBprpDctnDgns.do",apl:"고용24에서 신청하기 →",ch:W24_LOGIN},
+ "출산육아기 고용안정장려금(대체인력·업무분담)":{ap:W24+"/sa/a/a/0040/selectEmstChlbCdprShrsRqdoBprpDctnDgns.do",apl:"대체인력 지원금 신청 →",u:W24+"/sa/a/a/0070/selectChdbthShrtenJobShareBprpDctnDgns.do",ul:"업무분담 지원금 신청",ch:W24_LOGIN},
+ "육아기 10시 출근제 지원금":{u:W24+"/sa/a/a/0020/selectWrbcJbEnamRqdoBprpDctnDgns.do",ap:W24+"/sa/a/a/0020/selectWrbcJbEnamRqdoBprpDctnDgns.do",apl:"고용24에서 신청하기 →",ch:"고용24 「워라밸일자리(소정근로시간단축/육아기10시출근제)」 신청 화면으로 이동합니다(기업회원 로그인)."},
+ "워라밸일자리장려금(주4.5일제 등)":{u:"https://www.nosa.or.kr/portal/",ap:"https://www.nosa.or.kr/portal/",apl:"노사발전재단에서 참여 신청 →",ch:"참여 신청은 노사발전재단, 장려금 청구는 고용24 또는 관할 고용센터에서 합니다. 2026년 워라밸+4.5 프로젝트는 상반기에 목표 인원을 채워 접수 여부를 먼저 확인하세요."},
+ "고령자 계속고용장려금":{u:W24+"/sa/a/e/0020/selectAgedEmplRqdoBprpDctnDgns.do",ap:W24+"/sa/a/e/0020/selectAgedEmplRqdoBprpDctnDgns.do",apl:"고용24에서 신청하기 →",ch:W24_LOGIN},
+ "국민내일배움카드(폐업 자영업자 포함)":{u:W24+"/hr/h/a/1100/selectIssueRequest.do",ap:W24+"/hr/h/a/1100/selectIssueRequest.do",apl:"내일배움카드 발급 신청 →",ch:"고용24 개인회원 로그인 후 카드 발급을 신청하고, 승인되면 훈련과정을 골라 수강합니다."},
  "소상공인 경영안정 바우처":{u:SB(576),ap:"https://xn--289a4dw79bzqe82a85m8lbc2bkzc73bcz0a.kr/",ch:"전용 누리집(소상공인경영안정바우처.kr)에서 온라인 신청",dc:"별도 서류 없음(매출은 국세청 자료로 자동 확인)"},
  "희망리턴패키지":{u:SB(592),d2:"2026년 점포철거비(원스톱폐업지원)는 10월 21일 접수가 끝났고, 전직장려수당 2차는 12월 31일까지 신청할 수 있습니다."},
  "스마트상점 기술보급":{u:SB(609),st:"wait",per:"2026.3.13~4.1 접수(마감)"},
@@ -602,7 +610,7 @@ const LINK_BY_NAME={
 const hostOf=u=>{try{return decodeURIComponent(new URL(u).hostname)}catch(e){return ""}};
 P.forEach(p=>{
   const o=LINK_BY_NAME[p.n];
-  if(o){ if(o.n)p.n=o.n; if(o.u)p.u=o.u; if(o.ap)p.ap=o.ap; if(o.ch)p.ch=o.ch; if(o.dc)p.dc=o.dc; if(o.st)p.st=o.st; if(o.per)p.per=o.per; if(o.d2)p.d+=" "+o.d2; p.spec=true; }
+  if(o){ if(o.n)p.n=o.n; if(o.u)p.u=o.u; if(o.ap)p.ap=o.ap; if(o.apl)p.apl=o.apl; if(o.ul)p.ul=o.ul; if(o.ch)p.ch=o.ch; if(o.dc)p.dc=o.dc; if(o.st)p.st=o.st; if(o.per)p.per=o.per; if(o.d2)p.d+=" "+o.d2; p.spec=true; }
   const h=LINK_BY_HOST[hostOf(p.u)]||{};
   if(!p.ch&&p.ty&&p.r!=="all")p.ch="주관기관(지자체·진흥원) 공고에 따라 신청";
   if(!p.ch)p.ch=h.ch||(p.ty?"주관기관(지자체·진흥원) 공고에 따라 신청":"주관기관 공고에 따라 신청");
@@ -843,7 +851,7 @@ function render(){
     const jd=judge(p);
     const VL={ok:"해당 가능",check:"확인 필요",no:"해당 안 됨"};
     const goUrl=p.ap||p.u;
-    const goLabel=p.ap?"신청하러 가기 →":(p.gl?p.gl+"에서 찾기 →":"공고 보고 신청하기 →");
+    const goLabel=p.apl?p.apl:p.ap?"신청하러 가기 →":(p.gl?p.gl+"에서 찾기 →":"공고 보고 신청하기 →");
     el.id=p.id;
     el.innerHTML=`<div class="head"><div style="display:grid;gap:4px;min-width:0">
       <div class="meta">${dd!==null?`<span class="dday${dd<=7?" soon":""}">${dd===0?"오늘 마감":"D-"+dd}</span>`:""}${jd?`<span class="vd vd-${jd.v}">${VL[jd.v]}</span>`:""}${tags.join("")}</div>
@@ -853,7 +861,7 @@ function render(){
       <div class="facts"><div><span>업종</span><b>${esc(inds)}</b></div><div><span>사업 단계</span><b>${esc(stg)}</b></div><div><span>접수</span><b>${esc(p.per)}</b></div></div>
       <div class="howto"><div><span>신청 창구</span><b>${esc(p.ch)}</b></div>${p.dc?`<div><span>준비 서류</span><b>${esc(p.dc)}</b></div>`:""}${p.gl?`<p class="hint">이 사업은 개별 공고 주소가 없어 ${esc(p.gl)}로 연결됩니다. 사업명 「${esc(p.n)}」으로 찾아보세요.</p>`:""}</div>
       <div class="actions"><a class="btn primary" href="${goUrl}" target="_blank" rel="noopener">${goLabel}</a>
-      ${p.ap?`<a class="btn ghost" href="${p.u}" target="_blank" rel="noopener">공고 원문 보기</a>`:""}
+      ${p.ap&&p.u!==p.ap?`<a class="btn ghost" href="${p.u}" target="_blank" rel="noopener">${p.ul||"공고 원문 보기"}</a>`:""}
       <button class="btn ghost fav" type="button" aria-pressed="${on}">${on?"★ 저장됨":"☆ 저장"}</button>
 </div>`;
     el.querySelector(".fav").onclick=()=>{favs.has(p.n)?favs.delete(p.n):favs.add(p.n);saveFavs();render()};
